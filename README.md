@@ -1,4 +1,14 @@
 ---
+
+title: Model Speed Comparator
+emoji: 🚀
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 8000
+pinned: false
+-------------
+
 # ⚡ Model Speed Comparator
 
 > Compare PyTorch baseline vs ONNX vs INT8 Quantized inference — same model, same prediction, dramatically different performance.
@@ -11,11 +21,11 @@ Built to demonstrate real-world AI inference optimization techniques used in pro
 
 Takes any text input and runs it through **3 versions of the same NLP model** (DistilBERT sentiment classifier), returning:
 
-| Variant | Format | What changes |
-|---|---|---|
-| **Baseline** | PyTorch `.bin` | Standard HuggingFace model, no optimization |
-| **ONNX** | `.onnx` | Exported + graph-optimized by ONNX Runtime |
-| **Quantized** | INT8 `.onnx` | Weights compressed from FP32 → INT8 |
+| Variant       | Format         | What changes                                |
+| ------------- | -------------- | ------------------------------------------- |
+| **Baseline**  | PyTorch `.bin` | Standard HuggingFace model, no optimization |
+| **ONNX**      | `.onnx`        | Exported + graph-optimized by ONNX Runtime  |
+| **Quantized** | INT8 `.onnx`   | Weights compressed from FP32 → INT8         |
 
 Each request returns latency (ms), model size (MB), prediction label, and confidence — side by side.
 
@@ -24,26 +34,31 @@ Each request returns latency (ms), model size (MB), prediction label, and confid
 ## 🧠 Key Concepts Demonstrated
 
 ### 1. ONNX Export
+
 Converts the PyTorch model to ONNX (Open Neural Network Exchange) format. ONNX Runtime applies:
-- **Operator fusion** — merges multiple ops into one (e.g. LayerNorm fusion)
-- **Memory planning** — reduces allocations during inference
-- **Hardware-agnostic optimization** — runs efficiently on any CPU/GPU
+
+* **Operator fusion** — merges multiple ops into one (e.g. LayerNorm fusion)
+* **Memory planning** — reduces allocations during inference
+* **Hardware-agnostic optimization** — runs efficiently on any CPU/GPU
 
 ### 2. INT8 Dynamic Quantization
+
 Reduces weight precision from 32-bit floats → 8-bit integers:
-- **4× smaller** model file
-- **2–4× faster** inference on CPU
-- **<1% accuracy drop** on most NLP classification tasks
-- No need for a calibration dataset (dynamic quantization)
+
+* **4× smaller** model file
+* **2–4× faster** inference on CPU
+* **<1% accuracy drop** on most NLP classification tasks
+* No need for a calibration dataset (dynamic quantization)
 
 ### 3. Why This Matters for AI Accelerators
+
 AI accelerator teams optimize model inference for deployment at scale — on CPUs, GPUs, NPUs, and custom silicon. The techniques here (ONNX, quantization, batching) are the foundation of what systems like NVIDIA TensorRT, Intel OpenVINO, and HCL's accelerator stack do.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 model-speed-comparator/
 ├── app/
 │   ├── main.py          # FastAPI routes
@@ -93,57 +108,48 @@ docker run -p 8000:8000 model-speed-comparator
 ### `POST /compare`
 
 ```json
-// Request
-{ "text": "This product is absolutely amazing!" }
-
-// Response
 {
-  "input": "This product is absolutely amazing!",
-  "results": {
-    "baseline":  { "label": "POSITIVE", "confidence": 0.9998, "latency_ms": 118.4, "model_size_mb": 268.0, "format": "PyTorch (.bin)" },
-    "onnx":      { "label": "POSITIVE", "confidence": 0.9997, "latency_ms": 58.2,  "model_size_mb": 268.0, "format": "ONNX (.onnx)" },
-    "quantized": { "label": "POSITIVE", "confidence": 0.9995, "latency_ms": 29.1,  "model_size_mb": 68.0,  "format": "Quantized ONNX INT8 (.onnx)" }
-  },
-  "summary": {
-    "fastest": "quantized",
-    "smallest": "quantized",
-    "speedup_vs_baseline": 4.1
-  }
+  "text": "This product is absolutely amazing!"
 }
 ```
 
 ### `GET /health`
-Returns `{ "status": "ok" }`
+
+Returns:
+
+```json
+{ "status": "ok" }
+```
 
 ---
 
 ## 📊 Typical Results (CPU, DistilBERT)
 
-| Variant | Latency | Size | vs Baseline |
-|---|---|---|---|
-| PyTorch Baseline | ~120ms | 268MB | 1× |
-| ONNX | ~60ms | 268MB | ~2× faster |
-| INT8 Quantized | ~30ms | 68MB | ~4× faster, 4× smaller |
+| Variant          | Latency | Size  | vs Baseline            |
+| ---------------- | ------- | ----- | ---------------------- |
+| PyTorch Baseline | ~120ms  | 268MB | 1×                     |
+| ONNX             | ~60ms   | 268MB | ~2× faster             |
+| INT8 Quantized   | ~30ms   | 68MB  | ~4× faster, 4× smaller |
 
 ---
 
 ## 🛠 Tech Stack
 
-- **FastAPI** — Async REST API
-- **HuggingFace Transformers** — DistilBERT model
-- **ONNX Runtime** — Optimized inference engine
-- **Optimum** — HuggingFace's ONNX export toolkit
-- **Docker** — Containerized deployment
+* **FastAPI**
+* **Hugging Face Transformers**
+* **ONNX Runtime**
+* **Optimum**
+* **Docker**
 
 ---
 
 ## 🔮 Possible Extensions
 
-- Add more optimization levels (FP16, INT4)
-- Support multiple model architectures (BERT, RoBERTa)
-- Add batch inference benchmarking
-- Integrate OpenVINO as a 4th backend
-- Add latency percentile tracking (p50, p95, p99)
+* Add more optimization levels (FP16, INT4)
+* Support multiple model architectures (BERT, RoBERTa)
+* Add batch inference benchmarking
+* Integrate OpenVINO as a 4th backend
+* Add latency percentile tracking (p50, p95, p99)
 
 ---
 
