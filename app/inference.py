@@ -1,18 +1,15 @@
-import time, os, gc
-import numpy as np
+import time, os, gc, numpy as np
 from pathlib import Path
 
 MODEL_DIR = Path("models")
 ONNX_PATH = MODEL_DIR / "model.onnx"
 QUANTIZED_PATH = MODEL_DIR / "model_quantized.onnx"
-MODEL_NAME = "distilbert-base-uncased-finetuned-sst-2-english"
+MODEL_NAME = "prajjwal1/bert-tiny"
 _tokenizer = None
 
 def _get_file_size_mb(path) -> float:
-    try:
-        return round(os.path.getsize(path) / (1024 * 1024), 1)
-    except:
-        return 0.0
+    try: return round(os.path.getsize(path) / (1024*1024), 1)
+    except: return 0.0
 
 def _load_tokenizer():
     global _tokenizer
@@ -30,10 +27,8 @@ def _export_to_onnx():
         if not ONNX_PATH.exists():
             import shutil
             for f in MODEL_DIR.glob("*.onnx"):
-                shutil.copy(str(f), str(ONNX_PATH))
-                break
-        del model
-        gc.collect()
+                shutil.copy(str(f), str(ONNX_PATH)); break
+        del model; gc.collect()
 
 def _quantize_onnx():
     if not QUANTIZED_PATH.exists():
@@ -41,26 +36,25 @@ def _quantize_onnx():
         from onnxruntime.quantization import quantize_dynamic, QuantType
         quantize_dynamic(str(ONNX_PATH), str(QUANTIZED_PATH), weight_type=QuantType.QInt8)
 
-def _run_onnx_inference(session, text):
-    tokenizer = _load_tokenizer()
-    inputs = tokenizer(text, return_tensors="np", truncation=True, max_length=128)
+def _onnx_infer(session, text):
+    tok = _load_tokenizer()
+    inputs = tok(text, return_tensors="np", truncation=True, max_length=128, padding=True)
     feed = {k: v for k, v in inputs.items() if k in [i.name for i in session.get_inputs()]}
-    outputs = session.run(None, feed)
-    logits = outputs[0][0]
-    exp_logits = np.exp(logits - np.max(logits))
-    probs = exp_logits / exp_logits.sum()
-    label_idx = int(np.argmax(probs))
-    return {"label": ["NEGATIVE", "POSITIVE"][label_idx], "confidence": round(float(probs[label_idx]), 4)}
+    out = session.run(None, feed)[0][0]
+    exp = np.exp(out - np.max(out)); probs = exp / exp.sum()
+    idx = int(np.argmax(probs))
+    return {"label": ["NEGATIVE","POSITIVE"][idx], "confidence": round(float(probs[idx]),4)}
 
 def run_baseline(text):
     from transformers import pipeline
-    pipe = pipeline("sentiment-analysis", model=MODEL_NAME, device=-1)
+    pipe = pipeline("text-classification", model=MODEL_NAME, device=-1)
     start = time.perf_counter()
     result = pipe(text)[0]
-    latency = (time.perf_counter() - start) * 1000
+    latency = (time.perf_counter()-start)*1000
     del pipe; gc.collect()
-    return {"label": result["label"], "confidence": round(result["score"], 4),
-            "latency_ms": round(latency, 2), "model_size_mb": 268.0, "format": "PyTorch (.bin)"}
+    label = "POSITIVE" if result["label"] == "LABEL_1" else "NEGATIVE"
+    return {"label": label, "confidence": round(result["score"],4),
+            "latency_ms": round(latency,2), "model_size_mb": 17.0, "format": "PyTorch (.bin)"}
 
 def run_onnx(text):
     import onnxruntime as ort
@@ -68,11 +62,11 @@ def run_onnx(text):
     opts = ort.SessionOptions(); opts.intra_op_num_threads = 1
     session = ort.InferenceSession(str(ONNX_PATH), sess_options=opts)
     start = time.perf_counter()
-    prediction = _run_onnx_inference(session, text)
-    latency = (time.perf_counter() - start) * 1000
+    pred = _onnx_infer(session, text)
+    latency = (time.perf_counter()-start)*1000
     del session; gc.collect()
-    return {**prediction, "latency_ms": round(latency, 2),
-            "model_size_mb": _get_file_size_mb(ONNX_PATH) or 255.0, "format": "ONNX (.onnx)"}
+    return {**pred, "latency_ms": round(latency,2),
+            "model_size_mb": _get_file_size_mb(ONNX_PATH) or 17.0, "format": "ONNX (.onnx)"}
 
 def run_quantized(text):
     import onnxruntime as ort
@@ -80,14 +74,14 @@ def run_quantized(text):
     opts = ort.SessionOptions(); opts.intra_op_num_threads = 1
     session = ort.InferenceSession(str(QUANTIZED_PATH), sess_options=opts)
     start = time.perf_counter()
-    prediction = _run_onnx_inference(session, text)
-    latency = (time.perf_counter() - start) * 1000
+    pred = _onnx_infer(session, text)
+    latency = (time.perf_counter()-start)*1000
     del session; gc.collect()
-    return {**prediction, "latency_ms": round(latency, 2),
-            "model_size_mb": _get_file_size_mb(QUANTIZED_PATH) or 64.0, "format": "Quantized ONNX INT8 (.onnx)"}
+    return {**pred, "latency_ms": round(latency,2),
+            "model_size_mb": _get_file_size_mb(QUANTIZED_PATH) or 4.5, "format": "Quantized ONNX INT8 (.onnx)"}
 
 def run_all_models(text):
-    baseline = run_baseline(text); gc.collect()
-    onnx = run_onnx(text); gc.collect()
-    quantized = run_quantized(text); gc.collect()
-    return {"baseline": baseline, "onnx": onnx, "quantized": quantized}
+    b = run_baseline(text); gc.collect()
+    o = run_onnx(text); gc.collect()
+    q = run_quantized(text); gc.collect()
+    return {"baseline": b, "onnx": o, "quantized": q}

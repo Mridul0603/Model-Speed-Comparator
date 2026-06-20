@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-MODEL = "distilbert-base-uncased-finetuned-sst-2-english"
+MODEL = "prajjwal1/bert-tiny"
 print("Downloading tokenizer...")
 AutoTokenizer.from_pretrained(MODEL)
-print("Downloading PyTorch model...")
+print("Downloading model...")
 AutoModelForSequenceClassification.from_pretrained(MODEL)
-print("All models downloaded successfully!")
+print("Done!")
