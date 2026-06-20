@@ -1,8 +1,8 @@
 ---
 title: Model Speed Comparator
-emoji: zap
+emoji: 🚀
 colorFrom: blue
-colorTo: cyan
+colorTo: purple
 sdk: docker
 app_port: 8000
 pinned: false
