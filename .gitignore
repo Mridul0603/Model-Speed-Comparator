@@ -1,0 +1,7 @@
+New-Item -Name ".gitignore" -ItemType "file" -Value "venv/
+models/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.onnx"
