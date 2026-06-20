@@ -85,3 +85,30 @@ def run_all_models(text):
     o = run_onnx(text); gc.collect()
     q = run_quantized(text); gc.collect()
     return {"baseline": b, "onnx": o, "quantized": q}
+
+import math
+
+def _percentile(values, p):
+    if not values: return 0.0
+    s = sorted(values)
+    i = max(0, min(math.ceil((p/100)*len(s))-1, len(s)-1))
+    return s[i]
+
+def run_benchmark(text: str, iterations: int = 20) -> dict:
+    latencies = {"baseline": [], "onnx": [], "quantized": []}
+    latest = None
+    for _ in range(iterations):
+        latest = run_all_models(text)
+        for k, v in latest.items():
+            latencies[k].append(v["latency_ms"])
+    stats = {}
+    for k, lats in latencies.items():
+        stats[k] = {
+            "avg_latency_ms": round(sum(lats)/len(lats), 2),
+            "min_latency_ms": round(min(lats), 2),
+            "max_latency_ms": round(max(lats), 2),
+            "p95_latency_ms": round(_percentile(lats, 95), 2),
+            "model_size_mb": latest[k]["model_size_mb"],
+            "format": latest[k]["format"],
+        }
+    return {"iterations": iterations, "latest_results": latest, "results": stats}
