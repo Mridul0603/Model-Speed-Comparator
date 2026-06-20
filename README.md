@@ -1,4 +1,12 @@
 ---
+title: Model Speed Comparator
+emoji: ?
+colorFrom: blue
+colorTo: cyan
+sdk: docker
+pinned: false
+---
+---
 
 title: Model Speed Comparator
 emoji: 🚀
@@ -156,3 +164,4 @@ Returns:
 ## 💬 Interview Explanation (30 seconds)
 
 > *"I took DistilBERT, a popular transformer model, and optimized it for CPU deployment in two steps — first converting it to ONNX format for graph-level optimizations, then applying dynamic INT8 quantization. The quantized model runs 4× faster and is 4× smaller with the same prediction accuracy. I wrapped all three variants in a FastAPI service with a live benchmarking dashboard. This directly mirrors what AI accelerator teams do — optimizing model inference for efficient deployment on target hardware."*
+
