@@ -1,3 +1,4 @@
+---
 # ⚡ Model Speed Comparator
 
 > Compare PyTorch baseline vs ONNX vs INT8 Quantized inference — same model, same prediction, dramatically different performance.
