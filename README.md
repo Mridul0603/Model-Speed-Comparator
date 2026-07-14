@@ -58,16 +58,16 @@ AI accelerator teams optimize model inference for deployment at scale — on CPU
 ## Screenshots
 
 ### Dashboard
-![Dashboard](images/dashboard.jpeg)
+![Dashboard](images/DASHBOARD.jpeg)
 
 ### Benchmark
-![Benchmark](images/benchmark.jpeg)
+![Benchmark](images/BENCHMARK.jpeg)
 
 ### Results
-![Results](images/results.jpeg)
+![Results](images/RESULTS.jpeg)
 
 ### Stats
-![Stats](images/stats.jpeg)
+![Stats](images/STATS.jpeg)
 
 ---
 
